@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Interior Feedback Hub</title>
+<style>
+  :root {
+    --bg: #F5F0EB;
+    --card: #FFFFFF;
+    --primary: #2C5F4B;
+    --primary-light: #3A7D63;
+    --accent: #D4A853;
+    --accent-light: #F0DDB4;
+    --text: #1A1A1A;
+    --text-muted: #6B6B6B;
+    --border: #E0D8CF;
+    --danger: #C0392B;
+    --star-empty: #D5CFC7;
+    --star-fill: #D4A853;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, #1E4435 100%);
+    padding: 28px 20px 22px;
+    text-align: center;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 20px rgba(44,95,75,0.3);
+  }
+  .header h1 { color: #fff; font-size: 22px; font-weight: 700; }
+  .header p { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 4px; }
+  .tabs {
+    display: flex; background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 78px; z-index: 99;
+  }
+  .tab {
+    flex: 1; padding: 14px 10px; text-align: center;
+    font-size: 14px; font-weight: 600; color: var(--text-muted);
+    border: none; background: none; cursor: pointer;
+    border-bottom: 3px solid transparent; font-family: inherit;
+    transition: color 0.3s;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+  .section {
+    background: var(--card); border-radius: 14px;
+    padding: 20px; margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--primary);
+    margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .field label .req { color: var(--danger); }
+  .field input, .field textarea {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 15px;
+    background: #FAFAF7; outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(44,95,75,0.1);
+    background: #fff;
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .star-row { display: flex; gap: 6px; align-items: center; }
+  .star-row svg { cursor: pointer; transition: transform 0.15s; fill: var(--star-empty); }
+  .star-row svg:hover { transform: scale(1.15); }
+  .star-row svg.filled { fill: var(--star-fill); }
+  .star-row .rtxt { margin-left: 10px; font-size: 13px; font-weight: 600; color: var(--accent); }
+  .submit-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff; border: none; border-radius: 12px;
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(44,95,75,0.3);
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .summary-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+  .summary-card {
+    flex: 1; background: var(--card); border-radius: 12px;
+    padding: 14px 10px; text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .summary-card .num { font-size: 24px; font-weight: 700; color: var(--primary); }
+  .summary-card .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .search-bar { margin-bottom: 14px; }
+  .search-bar input {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: inherit; font-size: 14px; background: var(--card); outline: none;
+  }
+  .search-bar input:focus { border-color: var(--primary); }
+  .card { background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border); animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .card .hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card .owner { font-size: 17px; font-weight: 700; color: var(--primary); }
+  .card .flat-badge { background: var(--accent-light); color: #8B6914; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 8px; }
+  .card .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .card .chip { background: #F5F0EB; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+  .card .stars-row { display: flex; align-items: center; gap: 3px; margin-bottom: 6px; }
+  .card .stars-row .label { margin-left: 6px; font-size: 12px; font-weight: 600; }
+  .card .comment { font-size: 14px; color: var(--text-muted); line-height: 1.5; padding: 10px; background: #FAFAF7; border-radius: 8px; margin-bottom: 10px; }
+  .card .footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); padding-top: 8px; border-top: 1px solid var(--border); }
+  .card .footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .empty { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+  .empty .icon { font-size: 48px; opacity: 0.4; margin-bottom: 12px; }
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--primary); color: #fff; padding: 14px 24px; border-radius: 12px;
+    font-size: 14px; font-weight: 600; z-index: 200; white-space: nowrap;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15); transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .hidden { display: none !important; }
+  .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .setup-banner {
+    background: #FFF3CD; border: 1px solid #FFECB5; border-radius: 12px;
+    padding: 16px; margin-bottom: 14px; font-size: 13px; color: #664D03; line-height: 1.6;
+  }
+  .setup-banner code { background: #fff; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  .refresh-btn {
+    padding: 8px 16px; background: var(--primary); color: #fff;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏠 Interior Feedback Hub</h1>
+  <p>Rate & review your interior designer experience</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-form" onclick="switchTab('form')">✏️ Add Feedback</button>
+  <button class="tab" id="tab-view" onclick="switchTab('view')">📋 View All <span id="badge" style="background:#D4A853;color:#fff;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:4px;">0</span></button>
+</div>
+
+<!-- ===================== FORM TAB ===================== -->
+<div class="container" id="panel-form">
+
+  <div id="setup-msg" class="setup-banner hidden">
+    ⚠️ <strong>Setup needed:</strong> Scroll to the bottom of this page source and set your Google Apps Script URL in the <code>SCRIPT_URL</code> variable. See the README for instructions.
+  </div>
+
+  <div class="section">
+    <div class="section-title">🏠 Property Details</div>
+    <div class="field">
+      <label>Owner Name <span class="req">*</span></label>
+      <input type="text" id="f-owner" placeholder="e.g. Rajesh Kumar">
+    </div>
+    <div class="field">
+      <label>Flat No <span class="req">*</span></label>
+      <input type="text" id="f-flat" placeholder="e.g. A-501">
+    </div>
+    <div class="field">
+      <label>BHK / Sq.Ft</label>
+      <input type="text" id="f-bhk" placeholder="e.g. 3 BHK / 1450 sq.ft">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎨 Interior Details</div>
+    <div class="field">
+      <label>Interior Designer / Firm Name <span class="req">*</span></label>
+      <input type="text" id="f-interior" placeholder="e.g. HomeLane / XYZ Interiors">
+    </div>
+    <div class="field">
+      <label>Website / Contact</label>
+      <input type="text" id="f-website" placeholder="e.g. www.homelane.com or 9876543210">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">⭐ Ratings</div>
+    <div class="field">
+      <label>Behaviour Rating <span class="req">*</span></label>
+      <div class="star-row" id="r-behaviour" data-val="0"></div>
+      <div class="hint">1 = Very Bad, 5 = Very Good</div>
+    </div>
+    <div class="field">
+      <label>Commitment & Trust <span class="req">*</span></label>
+      <div class="star-row" id="r-trust" data-val="0"></div>
+      <div class="hint">1 = Very Bad, 5 = Very Good</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💬 Feedback</div>
+    <div class="field">
+      <label>Comments <span class="req">*</span></label>
+      <textarea id="f-comments" placeholder="Share about: Timeliness, Charges, Quality of suggestions, Flexibility to changes, Taking feedback..."></textarea>
+    </div>
+    <div class="field">
+      <label>Remarks</label>
+      <textarea id="f-remarks" rows="2" style="min-height:50px" placeholder="Any additional remarks (optional)"></textarea>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitFeedback()">Submit Feedback ✓</button>
+  <div style="height:30px"></div>
+</div>
+
+<!-- ===================== VIEW TAB ===================== -->
+<div class="container hidden" id="panel-view">
+  <div class="summary-bar">
+    <div class="summary-card"><div class="num" id="s-total">0</div><div class="lbl">Total Reviews</div></div>
+    <div class="summary-card"><div class="num" id="s-beh">—</div><div class="lbl">Avg Behaviour</div></div>
+    <div class="summary-card"><div class="num" id="s-trust">—</div><div class="lbl">Avg Trust</div></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px">
+    <div class="search-bar" style="flex:1;margin-bottom:0">
+      <input type="text" id="search" placeholder="🔍 Search owner, flat, interior..." oninput="renderList()">
+    </div>
+    <button class="refresh-btn" onclick="loadAllFeedback()">↻ Refresh</button>
+  </div>
+  <div id="feedback-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURATION — PASTE YOUR GOOGLE APPS SCRIPT URL BELOW   ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOAehRx1zg-E4GJ7ycTFThxljOtnDHzJtolSprKYyv44TF6LZqoffoGbFCwNntq4Hq3g/exec'; // <-- PASTE YOUR URL HERE
+
+// ─── Rating labels ───
+const RL = ['','Very Bad','Bad','Average','Good','Very Good'];
+
+// ─── Build star rows ───
+document.querySelectorAll('.star-row').forEach(row => {
+  for (let i = 1; i <= 5; i++) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width','36'); svg.setAttribute('height','36');
+    svg.setAttribute('viewBox','0 0 24 24'); svg.dataset.v = i;
+    svg.innerHTML = '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01z"/>';
+    svg.onclick = () => {
+      row.dataset.val = i;
+      row.querySelectorAll('svg').forEach(s => s.classList.toggle('filled', +s.dataset.v <= i));
+      let t = row.querySelector('.rtxt');
+      if (!t) { t = document.createElement('span'); t.className='rtxt'; row.appendChild(t); }
+      t.textContent = RL[i];
+    };
+    row.appendChild(svg);
+  }
+});
+
+// ─── Tabs ───
+function switchTab(t) {
+  document.getElementById('panel-form').classList.toggle('hidden', t !== 'form');
+  document.getElementById('panel-view').classList.toggle('hidden', t !== 'view');
+  document.getElementById('tab-form').classList.toggle('active', t === 'form');
+  document.getElementById('tab-view').classList.toggle('active', t === 'view');
+  if (t === 'view') loadAllFeedback();
+}
+
+// ─── Toast ───
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── Escape HTML ───
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ─── Star HTML ───
+function starSVG(filled) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="${filled?'#D4A853':'#D5CFC7'}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+}
+
+// ─── CACHE ───
+let allEntries = [];
+
+// ─── SUBMIT ───
+async function submitFeedback() {
+  if (!SCRIPT_URL) { showToast('⚠️ Setup needed: set SCRIPT_URL'); return; }
+
+  const owner = document.getElementById('f-owner').value.trim();
+  const flat = document.getElementById('f-flat').value.trim();
+  const bhk = document.getElementById('f-bhk').value.trim();
+  const interior = document.getElementById('f-interior').value.trim();
+  const website = document.getElementById('f-website').value.trim();
+  const behaviour = +document.getElementById('r-behaviour').dataset.val;
+  const trust = +document.getElementById('r-trust').dataset.val;
+  const comments = document.getElementById('f-comments').value.trim();
+  const remarks = document.getElementById('f-remarks').value.trim();
+
+  if (!owner || !flat || !interior || !behaviour || !trust || !comments) {
+    showToast('⚠️ Please fill all required fields'); return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> Submitting...';
+
+  const data = {
+    action: 'add',
+    owner, flat, bhk, interior, website,
+    behaviour, trust, comments, remarks,
+    date: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+  };
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (json.status === 'success') {
+      showToast('✅ Feedback submitted successfully!');
+      // Reset form
+      ['f-owner','f-flat','f-bhk','f-interior','f-website','f-comments','f-remarks'].forEach(id => document.getElementById(id).value = '');
+      document.querySelectorAll('.star-row').forEach(r => {
+        r.dataset.val = '0';
+        r.querySelectorAll('svg').forEach(s => s.classList.remove('filled'));
+        const t = r.querySelector('.rtxt'); if (t) t.textContent = '';
+      });
+    } else {
+      showToast('❌ Error: ' + (json.message || 'Unknown error'));
+    }
+  } catch (e) {
+    showToast('❌ Network error. Please try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Submit Feedback ✓';
+}
+
+// ─── LOAD ALL ───
+async function loadAllFeedback() {
+  if (!SCRIPT_URL) {
+    document.getElementById('setup-msg').classList.remove('hidden');
+    document.getElementById('feedback-list').innerHTML = '<div class="empty"><div class="icon">⚙️</div><p>Please set up the Google Sheets backend first.<br>See the README instructions.</p></div>';
+    return;
+  }
+
+  document.getElementById('feedback-list').innerHTML = '<div style="text-align:center;padding:40px;color:#6B6B6B"><span class="loading-spinner" style="border-color:rgba(44,95,75,0.2);border-top-color:#2C5F4B"></span> Loading feedback...</div>';
+
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.status === 'success') {
+      allEntries = json.data || [];
+      document.getElementById('badge').textContent = allEntries.length;
+      renderList();
+    }
+  } catch (e) {
+    document.getElementById('feedback-list').innerHTML = '<div class="empty"><div class="icon">❌</div><p>Could not load feedback. Check your connection.</p></div>';
+  }
+}
+
+// ─── RENDER LIST ───
+function renderList() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const filtered = allEntries.filter(d =>
+    (d.owner||'').toLowerCase().includes(q) ||
+    (d.flat||'').toLowerCase().includes(q) ||
+    (d.interior||'').toLowerCase().includes(q)
+  );
+
+  // Summary
+  document.getElementById('s-total').textContent = allEntries.length;
+  if (allEntries.length) {
+    document.getElementById('s-beh').textContent = (allEntries.reduce((s,d) => s + (+d.behaviour||0), 0) / allEntries.length).toFixed(1);
+    document.getElementById('s-trust').textContent = (allEntries.reduce((s,d) => s + (+d.trust||0), 0) / allEntries.length).toFixed(1);
+  }
+
+  if (!filtered.length) {
+    document.getElementById('feedback-list').innerHTML = '<div class="empty"><div class="icon">🏡</div><p>No feedback entries yet.<br>Be the first to add one!</p></div>';
+    return;
+  }
+
+  document.getElementById('feedback-list').innerHTML = filtered.map(d => {
+    const bStars = [1,2,3,4,5].map(i => starSVG(i <= +d.behaviour)).join('');
+    const tStars = [1,2,3,4,5].map(i => starSVG(i <= +d.trust)).join('');
+    const contact = d.website
+      ? ((d.website+'').match(/^[\d\s+\-]+$/)
+          ? `<a href="tel:${esc(d.website)}">${esc(d.website)}</a>`
+          : `<a href="${(d.website+'').startsWith('http') ? esc(d.website) : 'https://'+esc(d.website)}" target="_blank">${esc(d.website)}</a>`)
+      : '—';
+    return `
+      <div class="card">
+        <div class="hdr">
+          <div class="owner">${esc(d.owner)}</div>
+          <div class="flat-badge">Flat ${esc(d.flat)}</div>
+        </div>
+        <div class="chips">
+          ${d.bhk ? `<div class="chip"><strong>${esc(d.bhk)}</strong></div>` : ''}
+          <div class="chip">Interior: <strong>${esc(d.interior)}</strong></div>
+        </div>
+        <div class="stars-row">${bStars}<span class="label" style="color:#D4A853">Behaviour: ${d.behaviour}/5</span></div>
+        <div class="stars-row">${tStars}<span class="label" style="color:#2C5F4B">Trust: ${d.trust}/5</span></div>
+        <div class="comment">${esc(d.comments)}</div>
+        ${d.remarks ? `<div style="font-size:13px;color:#6B6B6B;margin-bottom:10px"><strong>Remarks:</strong> ${esc(d.remarks)}</div>` : ''}
+        <div class="footer"><span>${esc(d.date||'')}</span><span>${contact}</span></div>
+      </div>`;
+  }).join('');
+}
+
+// Init
+if (!SCRIPT_URL) document.getElementById('setup-msg').classList.remove('hidden');
+</script>
+</body>
+</html>
